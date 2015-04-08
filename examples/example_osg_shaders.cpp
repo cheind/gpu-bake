@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include <bake/convert_surface.h>
+#include <bake/opencl/bake.h>
 
 TEST_CASE("osg_shaders")
 {
@@ -23,7 +24,7 @@ TEST_CASE("osg_shaders")
     
     bake::Surface s;
     bake::convertSurface(root, s, bake::ConvertAll);
-    
+    bake::opencl::bakeTextureMap(s, s);
     /*
     osgViewer::Viewer viewer;
     viewer.setSceneData(root);

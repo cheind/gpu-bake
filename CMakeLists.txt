@@ -15,8 +15,8 @@ set(EIGEN_INCLUDE_DIR "../eigen" CACHE PATH "Where is the include directory of E
 include_directories(${EIGEN_INCLUDE_DIR})
 
 find_package(OpenCL)
-include_directories(${OPENCL_INCLUDE_DIR})
-link_libraries(${OPENCL_LIBRARIES})
+include_directories(${OpenCL_INCLUDE_DIR})
+link_libraries(${OpenCL_LIBRARY})
 
 find_package(OpenSceneGraph REQUIRED osgDB osgViewer osgGA osgUtil)
 include_directories(${OPENSCENEGRAPH_INCLUDE_DIRS})

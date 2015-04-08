@@ -6,4 +6,12 @@
 // If a copy of the BSD was not distributed with this file, You can obtain
 // one at http://opensource.org/licenses/BSD-3-Clause.
 
-int function();
+#include <bake/surface.h>
+
+namespace bake {
+    namespace opencl {
+        
+        bool bakeTextureMap(const Surface &from, const Surface &to);
+        
+    }
+}
