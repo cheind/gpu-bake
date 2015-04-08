@@ -25,14 +25,22 @@ link_libraries(${OPENSCENEGRAPH_LIBRARIES})
 # Setup library
 
 set(GPUBAKE_FILES 
-	inc/bake/log.h
-	inc/bake/bake.h 
+	inc/bake/log.h 
 	inc/bake/surface.h
 	inc/bake/convert_surface.h
-	src/convert_surface.cpp)
+	src/convert_surface.cpp	
+)
+
+set(GPUBAKE_OPENCL_FILES
+	inc/bake/opencl/bake.h
+	src/opencl/bake.cpp
+)
+
+source_group(bake FILES ${GPUBAKE_FILES})
+source_group(bake\\opencl FILES ${GPUBAKE_OPENCL_FILES})
 	
 include_directories(inc)
-add_library(gpubake ${GPUBAKE_FILES})
+add_library(gpubake ${GPUBAKE_FILES} ${GPUBAKE_OPENCL_FILES})
 
 # Setup examples
 

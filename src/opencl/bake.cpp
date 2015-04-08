@@ -6,6 +6,8 @@
 // If a copy of the BSD was not distributed with this file, You can obtain
 // one at http://opensource.org/licenses/BSD-3-Clause.
 
-#include <cstdio>
+#include <bake/opencl/bake.h>
 
-#define BAKE_LOG(...) do { fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n"); } while (0)
+namespace bake {
+    
+}
