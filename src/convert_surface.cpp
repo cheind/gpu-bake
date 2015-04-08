@@ -83,7 +83,6 @@ namespace bake {
                     unsigned int nPrims = geom->getNumPrimitiveSets();
                     for (unsigned int iprim = 0; iprim < nPrims; ++iprim) {
                         osg::PrimitiveSet *p = geom->getPrimitiveSet(iprim);
-                        //osg::DrawArrays *a = dynamic_cast<osg::DrawArrays*>(p->getDrawElements())
                         
                         for (GLsizei i = 0; i < p->getNumIndices(); ++i) {
                             _s.vertexPositions.col(_idx) = toE(v->at(p->index(i)));
@@ -103,8 +102,8 @@ namespace bake {
         
     private:
         
-        Eigen::Vector3f toE(const osg::Vec3 &v) const {
-            return Eigen::Vector3f(v.x(), v.y(), v.z());
+        Eigen::Vector4f toE(const osg::Vec3 &v) const {
+            return Eigen::Vector4f(v.x(), v.y(), v.z(), 1.f);
         }
         
         Eigen::Vector2f toE(const osg::Vec2 &v) const {
@@ -155,9 +154,9 @@ namespace bake {
         }
 
         // Alloc storage
-        s.vertexPositions.resize(3, v1.nTriangles * 3);
-        if (opts & ConvertVertexColors) s.vertexColors.resize(3, v1.nTriangles * 3);
-        if (opts & ConvertVertexNormals) s.vertexNormals.resize(3, v1.nTriangles * 3);
+        s.vertexPositions.resize(4, v1.nTriangles * 3);
+        if (opts & ConvertVertexColors) s.vertexColors.resize(4, v1.nTriangles * 3);
+        if (opts & ConvertVertexNormals) s.vertexNormals.resize(4, v1.nTriangles * 3);
         if (opts & ConvertVertexUVs) s.vertexUVs.resize(2, v1.nTriangles * 3);
         
         SecondPassVisitor v2(s, opts);

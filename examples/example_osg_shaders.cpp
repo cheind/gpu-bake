@@ -23,7 +23,7 @@ TEST_CASE("osg_shaders")
     osg::Node *root = osgDB::readNodeFile(std::string("input.obj"));
     
     bake::Surface s;
-    bake::convertSurface(root, s, bake::ConvertAll);
+    bake::convertSurface(root, s, bake::ConvertVertexNormals | bake::ConvertVertexUVs);
     bake::opencl::bakeTextureMap(s, s);
     /*
     osgViewer::Viewer viewer;

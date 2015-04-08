@@ -26,6 +26,7 @@ link_libraries(${OPENSCENEGRAPH_LIBRARIES})
 
 set(GPUBAKE_FILES 
 	inc/bake/log.h 
+	inc/bake/stringify.h
 	inc/bake/surface.h
 	inc/bake/convert_surface.h
 	src/convert_surface.cpp	
@@ -33,6 +34,7 @@ set(GPUBAKE_FILES
 
 set(GPUBAKE_OPENCL_FILES
 	inc/bake/opencl/bake.h
+	inc/bake/opencl/bake.cl
 	src/opencl/bake.cpp
 )
 

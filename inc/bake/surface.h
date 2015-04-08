@@ -20,9 +20,9 @@ namespace bake {
         towards lesser memory footprint in future work. 
     */
     struct Surface {
-        typedef Eigen::Matrix<float, 3, Eigen::Dynamic, Eigen::ColMajor> VertexPositionMatrix;
-        typedef Eigen::Matrix<float, 3, Eigen::Dynamic, Eigen::ColMajor> VertexColorMatrix;
-        typedef Eigen::Matrix<float, 3, Eigen::Dynamic, Eigen::ColMajor> VertexNormalMatrix;
+        typedef Eigen::Matrix<float, 4, Eigen::Dynamic, Eigen::ColMajor> VertexPositionMatrix;
+        typedef Eigen::Matrix<float, 4, Eigen::Dynamic, Eigen::ColMajor> VertexColorMatrix;
+        typedef Eigen::Matrix<float, 4, Eigen::Dynamic, Eigen::ColMajor> VertexNormalMatrix;
         typedef Eigen::Matrix<float, 2, Eigen::Dynamic, Eigen::ColMajor> VertexUVMatrix;
         
         VertexPositionMatrix vertexPositions;

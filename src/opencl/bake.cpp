@@ -10,18 +10,27 @@
 #include <bake/opencl/cl.hpp>
 #include <bake/log.h>
 #include <vector>
+#include <string>
+
+#include <bake/stringify.h>
+std::string clSource =
+#include <bake/opencl/bake.cl>
 
 namespace bake {
     namespace opencl {
         
-        struct Context {
+        /** OpenCL context. */
+        struct OCL {
             cl::Context ctx;
             cl::Device d;
             cl::Platform p;
             cl::CommandQueue q;
+            cl::Program prg;
+            cl::Kernel kBakeTexture;
         };
         
-        bool createContext(Context &c, int deviceId) {
+        /** Initialize OpenCL relevant structures. */
+        bool initOpenCL(OCL &c, int deviceId) {
             std::vector<cl::Platform> platforms;
             cl::Platform::get(&platforms);
             
@@ -67,13 +76,68 @@ namespace bake {
                 BAKE_LOG("Failed to create OpenCL queue.");
             }
             
+            // Build program
+            cl::Program::Sources source(1, std::make_pair(clSource.c_str(), clSource.size()));
+            c.prg = cl::Program(c.ctx, source, &err);
+            err = c.prg.build(devs);
+            if (err != CL_SUCCESS) {
+                BAKE_LOG("Failed to build OpenCL program: %s", c.prg.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devs.front()).c_str());
+                return false;
+            }
+            
+            c.kBakeTexture = cl::Kernel(c.prg, "bakeTextureMap", &err);
+            if (err != CL_SUCCESS) {
+                BAKE_LOG("Failed to locate kernel");
+            }
+            
             return true;
             
         }
         
         bool bakeTextureMap(const Surface &from, const Surface &to) {
-            Context c;
-            createContext(c, 0);
+            OCL ocl;
+            initOpenCL(ocl, 1);
+            
+            // Prepare necessary buffers on GPU
+            
+            cl::Buffer bVertexPositions(ocl.ctx,
+                                        CL_MEM_READ_ONLY,
+                                        to.vertexPositions.array().size() * sizeof(float),
+                                        const_cast<float*>(to.vertexPositions.data()));
+            
+            cl::Buffer bVertexUVs(ocl.ctx,
+                                  CL_MEM_READ_ONLY,
+                                  to.vertexUVs.array().size() * sizeof(float),
+                                  const_cast<float*>(to.vertexUVs.data()));
+            
+            cl::Buffer bVertexNormals(ocl.ctx,
+                                      CL_MEM_READ_ONLY,
+                                      to.vertexNormals.array().size() * sizeof(float));
+            
+            // Allocate texture
+        
+            cl::Image2D bTexture(ocl.ctx,
+                                 CL_MEM_WRITE_ONLY,
+                                 cl::ImageFormat(CL_RGBA, CL_UNORM_INT8),
+                                 1024,
+                                 1024);
+            
+            ocl.kBakeTexture.setArg(0, bVertexPositions);
+            ocl.kBakeTexture.setArg(1, bVertexNormals);
+            ocl.kBakeTexture.setArg(2, bVertexUVs);
+            ocl.kBakeTexture.setArg(3, bTexture);
+            ocl.kBakeTexture.setArg(4, 1024);
+            ocl.kBakeTexture.setArg(5, (int)to.vertexPositions.cols()/3);
+            
+            int nTrianglesDivisableBy2 = to.vertexPositions.cols()/3 + (to.vertexPositions.cols()/3) % 2;
+            
+            ocl.q.enqueueNDRangeKernel(ocl.kBakeTexture, cl::NullRange, cl::NDRange(nTrianglesDivisableBy2), cl::NullRange);
+            ocl.q.finish();
+            
+            
+            
+            
+            //http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
             
             
             return false;
