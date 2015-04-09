@@ -9,12 +9,21 @@
 #include <bake/opencl/bake.h>
 #include <bake/opencl/cl.hpp>
 #include <bake/log.h>
+#include <bake/image.h>
 #include <vector>
 #include <string>
+#include <iostream>
+#include <opencv2/opencv.hpp>
 
 #include <bake/stringify.h>
 std::string clSource =
 #include <bake/opencl/bake.cl>
+
+#define ASSERT_OPENCL(clerr, msg)           \
+    if (clerr != CL_SUCCESS) {              \
+        BAKE_LOG("%s : %d", msg, clerr);    \
+        return false;                       \
+    }
 
 namespace bake {
     namespace opencl {
@@ -96,46 +105,76 @@ namespace bake {
         
         bool bakeTextureMap(const Surface &from, const Surface &to) {
             OCL ocl;
-            initOpenCL(ocl, 1);
+            initOpenCL(ocl, 2);
             
             // Prepare necessary buffers on GPU
+            cl_int err;
             
             cl::Buffer bVertexPositions(ocl.ctx,
-                                        CL_MEM_READ_ONLY,
+                                        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                         to.vertexPositions.array().size() * sizeof(float),
-                                        const_cast<float*>(to.vertexPositions.data()));
+                                        const_cast<float*>(to.vertexPositions.data()),
+                                        &err);
+            ASSERT_OPENCL(err, "Failed to create vertex buffer");
+            
             
             cl::Buffer bVertexUVs(ocl.ctx,
-                                  CL_MEM_READ_ONLY,
+                                  CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                   to.vertexUVs.array().size() * sizeof(float),
-                                  const_cast<float*>(to.vertexUVs.data()));
+                                  const_cast<float*>(to.vertexUVs.data()), &err);
+            ASSERT_OPENCL(err, "Failed to create UV buffer");
             
             cl::Buffer bVertexNormals(ocl.ctx,
-                                      CL_MEM_READ_ONLY,
-                                      to.vertexNormals.array().size() * sizeof(float));
-            
-            // Allocate texture
+                                      CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                      to.vertexNormals.array().size() * sizeof(float),
+                                      const_cast<float*>(to.vertexNormals.data()), &err);
+            ASSERT_OPENCL(err, "Failed to create normals buffer");
         
+            
+            const int imagesize = 1024;
+            
+            Image<unsigned char> texture(imagesize, imagesize, 3);
+            texture.toOpenCV().setTo(0);
+            
+            
             cl::Image2D bTexture(ocl.ctx,
-                                 CL_MEM_WRITE_ONLY,
-                                 cl::ImageFormat(CL_RGBA, CL_UNORM_INT8),
-                                 1024,
-                                 1024);
+                                 CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR,
+                                 cl::ImageFormat(CL_RGB, CL_UNORM_INT8),
+                                 imagesize, imagesize, 0, texture.row(0), &err);
+            ASSERT_OPENCL(err, "Failed to create texture image");
             
             ocl.kBakeTexture.setArg(0, bVertexPositions);
             ocl.kBakeTexture.setArg(1, bVertexNormals);
             ocl.kBakeTexture.setArg(2, bVertexUVs);
             ocl.kBakeTexture.setArg(3, bTexture);
-            ocl.kBakeTexture.setArg(4, 1024);
+            ocl.kBakeTexture.setArg(4, imagesize);
             ocl.kBakeTexture.setArg(5, (int)to.vertexPositions.cols()/3);
             
             int nTrianglesDivisableBy2 = to.vertexPositions.cols()/3 + (to.vertexPositions.cols()/3) % 2;
             
             ocl.q.enqueueNDRangeKernel(ocl.kBakeTexture, cl::NullRange, cl::NDRange(nTrianglesDivisableBy2), cl::NullRange);
+            
+            cl::size_t<3> origin;
+            origin.push_back(0);
+            origin.push_back(0);
+            origin.push_back(0);
+            
+            cl::size_t<3> region;
+            region.push_back(imagesize);
+            region.push_back(imagesize);
+            region.push_back(1);
+            
+            ocl.q.enqueueReadImage(bTexture, false, origin, region, 0, 0, texture.row(0));
             ocl.q.finish();
             
+            std::cout<< "ok" << std::endl;
             
+            cv::Mat m = texture.toOpenCV();
+            //cv::flip(m, m, 0);
             
+            cv::imwrite("input.png", m);
+            cv::imshow("test", m);
+            cv::waitKey();
             
             //http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
             

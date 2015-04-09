@@ -20,8 +20,10 @@
 TEST_CASE("osg_shaders")
 {
     
-    osg::Node *root = osgDB::readNodeFile(std::string("input.obj"));
-    
+    osgDB::Options *opts = new osgDB::Options();
+    opts->setOptionString("noTesselateLargePolygons noTriStripPolygons noRotation");
+    osg::Node *root = osgDB::readNodeFile(std::string("input.obj"), opts);
+     
     bake::Surface s;
     bake::convertSurface(root, s, bake::ConvertVertexNormals | bake::ConvertVertexUVs);
     bake::opencl::bakeTextureMap(s, s);

@@ -22,12 +22,21 @@ find_package(OpenSceneGraph REQUIRED osgDB osgViewer osgGA osgUtil)
 include_directories(${OPENSCENEGRAPH_INCLUDE_DIRS})
 link_libraries(${OPENSCENEGRAPH_LIBRARIES})
 
+find_package(OpenCV)
+
+if (OpenCV_FOUND)
+    include_directories(${OpenCV_INCLUDE_DIRS})
+    link_libraries(${OpenCV_LIBS})
+    add_definitions(-DBAKE_WITH_OPENCV)
+endif ()
+
 # Setup library
 
 set(GPUBAKE_FILES 
 	inc/bake/log.h 
 	inc/bake/stringify.h
 	inc/bake/surface.h
+	inc/bake/image.h
 	inc/bake/convert_surface.h
 	src/convert_surface.cpp	
 )

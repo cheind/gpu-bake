@@ -12,6 +12,7 @@
 #include <osg/Geode>
 #include <osg/Geometry>
 #include <osg/PrimitiveSet>
+#include <iostream>
 
 namespace bake {
     
@@ -36,7 +37,6 @@ namespace bake {
         }
         
         virtual void apply(osg::Geode &n) {
-            
             unsigned int nDraws = n.getNumDrawables();
             for (unsigned int idraw = 0 ; idraw < nDraws; ++idraw) {
                 osg::Geometry *geom = n.getDrawable( idraw )->asGeometry();
@@ -90,8 +90,9 @@ namespace bake {
                                 _s.vertexColors.col(_idx) = toE(vc->at(p->index(i)));
                             if (_opts & ConvertVertexNormals)
                                 _s.vertexNormals.col(_idx) = toE(vn->at(p->index(i)));
-                            if (_opts & ConvertVertexColors)
+                            if (_opts & ConvertVertexUVs) {
                                 _s.vertexUVs.col(_idx) = toE(vt->at(p->index(i)));
+                            }
                             ++_idx;
                         }
                     }
@@ -121,10 +122,7 @@ namespace bake {
     {
         osgUtil::Optimizer opt;
         osg::ref_ptr<osg::Node> n = (osg::Node*)node->clone(osg::CopyOp::DEEP_COPY_ALL);
-        opt.optimize(n,
-                     osgUtil::Optimizer::MERGE_GEODES |
-                     osgUtil::Optimizer::MERGE_GEOMETRY |
-                     osgUtil::Optimizer::INDEX_MESH);
+        opt.optimize(n, osgUtil::Optimizer::INDEX_MESH);
         
         FirstPassVisitor v1;
         n->accept(v1);
@@ -160,6 +158,7 @@ namespace bake {
         if (opts & ConvertVertexUVs) s.vertexUVs.resize(2, v1.nTriangles * 3);
         
         SecondPassVisitor v2(s, opts);
+        n->accept(v2);
         return true;
         
     }

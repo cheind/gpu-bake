@@ -9,10 +9,6 @@ BAKE_STRINGIFY(
 // If a copy of the BSD was not distributed with this file, You can obtain
 // one at http://opensource.org/licenses/BSD-3-Clause.
 
-#pragma OPENCL EXTENSION cl_intel_printf :enable
-
-__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
-
 float cross2(float2 a, float2 b) {
     return a.x*b.y - a.y*b.x;
 }
@@ -22,7 +18,7 @@ __kernel void bakeTextureMap(
     __global float4* toVertexNormals,
     __global float2* toVertexUVs,
     __write_only image2d_t texture,
-    float imageSize,
+    int imageSize,
     int nTriangles
 )
 {
@@ -37,26 +33,34 @@ __kernel void bakeTextureMap(
     
     // Rasterize triangle in UV space.
     // We currently use a bary-centric approach guided by the UV bounding box of
-    // the triangle. This wastes performance as it samples the entire bounding box
-    // space, but has the advantage that barycentrics are required anyway.
+    // the triangl/Users/cheind/volplay/inc/volplay/rendering/image.he. This wastes
+    // performance as it samples the entire bounding box space, but has the advantage
+    // that barycentrics are required anyway.
     
-    float2 uvMax = max(uvA, max(uvB, uvC));
-    float2 uvMin = min(uvA, min(uvB, uvC));
-    
-    float2 uvBA = uvB - uvA;
-    float2 uvCA = uvC - uvA;
-    float invCrossBACA = 1.f / cross2(uvBA, uvCA);
+    float2 uvMin = max(min(uvA, min(uvB, uvC)), 0.f);
+    float2 uvMax = min(max(uvA, max(uvB, uvC)), imageSize - 1.f);
 
-    for (float x = uvMin.x; x <= uvMax.x; ++x) {
-        for (float y = uvMin.y; y <= uvMax.y; ++y) {
-            float2 e = (float2)(x - uvA.x, y - uvB.y);
-            float s = cross2(e, uvCA) * invCrossBACA;
-            float t = cross2(uvBA, e) * invCrossBACA;
-            float u = 1.f - s - t;
-            printf("%f %f\n", s, t);
-            if ((s >= 0) & (t >= 0) & (u >= 0)) {
+    float invA = 1.f / fabs(cross2(uvC - uvB, uvB - uvA));
+
+    for (float x = uvMin.x; x <= uvMax.x; x += 0.2f) {
+        for (float y = uvMin.y; y <= uvMax.y; y += 0.2f) {
+            
+            float2 q = (float2)(x,y);
+            float u = cross2(uvC - uvB, q - uvB) * invA;
+            float v = cross2(uvA - uvC, q - uvC) * invA;
+            float w = 1.f - u - v;
+            
+            if ((u >= 0) & (v >= 0) & (w >= 0)) {
+                int2 pix = (int2)(round(x), round(y));
                 
-                write_imagef(texture, (int2)(x, y), (float4)(1.f));
+                float4 color = (float4)(
+                    (triId % 255) / 255.f,
+                    (triId % 255) / 255.f,
+                    (triId % 255) / 255.f,
+                    1.f
+                );
+                
+                write_imagef(texture, pix, color);
             }
             
         }
