@@ -13,4 +13,14 @@
  
     where the File.cl content is wrapped with the BAKE_STRINGIFY macro.
  */
-#define BAKE_STRINGIFY(x) #x
+#define BAKE_STRINGIFY0(x) #x
+#define BAKE_STRINGIFY(x) BAKE_STRINGIFY0(x)
+
+#include <string>
+
+namespace bake {
+    
+    /** Read file to string. */
+    std::string readFile(const std::string &path);
+    
+}

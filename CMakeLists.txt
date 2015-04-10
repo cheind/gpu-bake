@@ -32,18 +32,24 @@ endif ()
 
 # Setup library
 
+configure_file(inc/bake/config.h.in "${PROJECT_BINARY_DIR}/bake/config.h")
+include_directories("${PROJECT_BINARY_DIR}")
+
 set(GPUBAKE_FILES 
+	inc/bake/config.h.in
 	inc/bake/log.h 
 	inc/bake/stringify.h
 	inc/bake/surface.h
 	inc/bake/image.h
 	inc/bake/convert_surface.h
 	src/convert_surface.cpp	
+	src/stringify.cpp
 )
 
 set(GPUBAKE_OPENCL_FILES
 	inc/bake/opencl/bake.h
 	inc/bake/opencl/bake.cl
+	inc/bake/opencl/ray.cl
 	src/opencl/bake.cpp
 )
 

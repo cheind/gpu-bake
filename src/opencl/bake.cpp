@@ -8,16 +8,14 @@
 
 #include <bake/opencl/bake.h>
 #include <bake/opencl/cl.hpp>
+#include <bake/stringify.h>
 #include <bake/log.h>
 #include <bake/image.h>
+#include <bake/config.h>
 #include <vector>
 #include <string>
 #include <iostream>
 #include <opencv2/opencv.hpp>
-
-#include <bake/stringify.h>
-std::string clSource =
-#include <bake/opencl/bake.cl>
 
 #define ASSERT_OPENCL(clerr, msg)           \
     if (clerr != CL_SUCCESS) {              \
@@ -86,8 +84,14 @@ namespace bake {
             }
             
             // Build program
-            cl::Program::Sources source(1, std::make_pair(clSource.c_str(), clSource.size()));
-            c.prg = cl::Program(c.ctx, source, &err);
+            std::string clSourceBake = readFile(std::string(BAKE_PATH) + "/inc/bake/opencl/bake.cl");
+            std::string clSourceRay = readFile(std::string(BAKE_PATH) + "/inc/bake/opencl/ray.cl");
+            
+            cl::Program::Sources sources;
+            sources.push_back(std::make_pair(clSourceBake.c_str(), clSourceBake.size()));
+            sources.push_back(std::make_pair(clSourceRay.c_str(), clSourceRay.size()));
+            
+            c.prg = cl::Program(c.ctx, sources, &err);
             err = c.prg.build(devs);
             if (err != CL_SUCCESS) {
                 BAKE_LOG("Failed to build OpenCL program: %s", c.prg.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devs.front()).c_str());
@@ -105,7 +109,9 @@ namespace bake {
         
         bool bakeTextureMap(const Surface &from, const Surface &to) {
             OCL ocl;
-            initOpenCL(ocl, 2);
+            if (!initOpenCL(ocl, 2)) {
+                return false;
+            }
             
             // Prepare necessary buffers on GPU
             cl_int err;
@@ -167,10 +173,8 @@ namespace bake {
             ocl.q.enqueueReadImage(bTexture, false, origin, region, 0, 0, texture.row(0));
             ocl.q.finish();
             
-            std::cout<< "ok" << std::endl;
-            
             cv::Mat m = texture.toOpenCV();
-            //cv::flip(m, m, 0);
+            cv::flip(m, m, 0);
             
             cv::imwrite("input.png", m);
             cv::imshow("test", m);

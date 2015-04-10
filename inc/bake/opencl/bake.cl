@@ -1,6 +1,4 @@
 
-BAKE_STRINGIFY(
-
 // This file is part of gpu-bake, a library for baking texture maps on GPUs.
 //
 // Copyright (C) 2015 Christoph Heindl <christoph.heindl@gmail.com>
@@ -66,6 +64,4 @@ __kernel void bakeTextureMap(
         }
     }
 }
-
-);
 
