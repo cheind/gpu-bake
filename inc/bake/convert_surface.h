@@ -9,7 +9,7 @@
 #ifndef BAKE_CONVERT_SURFACE
 #define BAKE_CONVERT_SURFACE
 
-#include <bake/surface.h>
+#include <bake/geometry.h>
 #include <osg/Node>
 
 namespace bake {

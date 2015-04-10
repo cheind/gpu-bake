@@ -6,7 +6,7 @@
 // If a copy of the BSD was not distributed with this file, You can obtain
 // one at http://opensource.org/licenses/BSD-3-Clause.
 
-#include <bake/surface.h>
+#include <bake/geometry.h>
 
 namespace bake {
     namespace opencl {

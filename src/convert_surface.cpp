@@ -159,6 +159,9 @@ namespace bake {
         
         SecondPassVisitor v2(s, opts);
         n->accept(v2);
+        
+        s.bounds = computeBoundingBox(s.vertexPositions);
+        
         return true;
         
     }

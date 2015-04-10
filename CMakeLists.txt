@@ -39,11 +39,12 @@ set(GPUBAKE_FILES
 	inc/bake/config.h.in
 	inc/bake/log.h 
 	inc/bake/stringify.h
-	inc/bake/surface.h
+	inc/bake/geometry.h
 	inc/bake/image.h
 	inc/bake/convert_surface.h
 	src/convert_surface.cpp	
 	src/stringify.cpp
+	src/geometry.cpp
 )
 
 set(GPUBAKE_OPENCL_FILES

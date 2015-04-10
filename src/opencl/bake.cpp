@@ -9,12 +9,12 @@
 #include <bake/opencl/bake.h>
 #include <bake/opencl/cl.hpp>
 #include <bake/stringify.h>
+#include <bake/geometry.h>
 #include <bake/log.h>
 #include <bake/image.h>
 #include <bake/config.h>
 #include <vector>
 #include <string>
-#include <iostream>
 #include <opencv2/opencv.hpp>
 
 #define ASSERT_OPENCL(clerr, msg)           \
@@ -104,7 +104,6 @@ namespace bake {
             }
             
             return true;
-            
         }
         
         bool bakeTextureMap(const Surface &from, const Surface &to) {
