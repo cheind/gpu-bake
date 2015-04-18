@@ -11,7 +11,7 @@
 namespace bake {
     namespace opencl {
         
-        bool bakeTextureMap(const Surface &from, const Surface &to);
+        bool bakeTextureMap(const Surface &src, const Surface &target);
         
     }
 }

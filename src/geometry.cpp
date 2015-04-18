@@ -25,7 +25,6 @@ namespace bake {
         return box;
     }
     
-    /** Build a transformation that maps from world coordinates to voxel grid coordinates. */
     Eigen::Affine3f buildWorldToVoxel(const Eigen::Vector3f &origin, const Eigen::Vector3f &voxelSizes)
     {
         Eigen::Affine3f a;
@@ -42,25 +41,27 @@ namespace bake {
                                (int)floor(l.z()));
     }
     
-    int toIndex(const Eigen::Vector3i &idx, int voxelResolution) {
-        return idx.x() + idx.y() * voxelResolution + idx.z() * voxelResolution * voxelResolution;
+    int toIndex(const Eigen::Vector3i &idx, const Eigen::Vector3i &res) {
+        return idx.x() + idx.y() * res.x() + idx.z() * res.x() * res.y();
     }
     
-    bool buildSurfaceVolume(const Surface &s, int nVoxelsPerDimension, std::vector<int> &cells, std::vector<int> &triIndices)
+    bool buildSurfaceVolume(const Surface &s, const Eigen::Vector3i &voxelsPerDimension, SurfaceVolume &v)
     {
+        v.bounds = computeBoundingBox(s.vertexPositions);
+        v.voxelsPerDimension = voxelsPerDimension;
+        v.voxelSizes = v.bounds.diagonal().array() / voxelsPerDimension.cast<float>().array();
+        v.toVoxel = buildWorldToVoxel(v.bounds.min(), v.voxelSizes);
+        
         // Loop over triangles and build a sparse map of voxel -> triangles
+        
         std::unordered_map<int, std::set<int> > voxelsToTri;
-        
-        Eigen::Vector3f voxelSizes = s.bounds.diagonal() / nVoxelsPerDimension;
-        Eigen::Affine3f t = buildWorldToVoxel(s.bounds.min(), voxelSizes);
-        
         auto &points = s.vertexPositions.topRows(3);
         
         const int ntri = static_cast<int>(s.vertexPositions.cols() / 3);
         for (int tri = 0; tri < ntri; ++tri) {
-            int a = toIndex(toVoxel(t, points.col(tri * 3 + 0)), nVoxelsPerDimension);
-            int b = toIndex(toVoxel(t, points.col(tri * 3 + 1)), nVoxelsPerDimension);
-            int c = toIndex(toVoxel(t, points.col(tri * 3 + 2)), nVoxelsPerDimension);
+            int a = toIndex(toVoxel(v.toVoxel, points.col(tri * 3 + 0)), v.voxelsPerDimension);
+            int b = toIndex(toVoxel(v.toVoxel, points.col(tri * 3 + 1)), v.voxelsPerDimension);
+            int c = toIndex(toVoxel(v.toVoxel, points.col(tri * 3 + 2)), v.voxelsPerDimension);
             
             voxelsToTri[a].insert(tri);
             voxelsToTri[b].insert(tri);
@@ -68,23 +69,23 @@ namespace bake {
         }
         
         // Loop over all cells and update output structures.
-        cells.clear();
-        triIndices.clear();
+        v.cells.clear();
+        v.triangleIndices.clear();
         
         int next = 0;
-        for (int idx = 0; idx < nVoxelsPerDimension*nVoxelsPerDimension*nVoxelsPerDimension; ++idx) {
+        for (int idx = 0; idx < v.voxelsPerDimension.array().size(); ++idx) {
             // Start index in triIndices
-            cells.push_back(next);
+            v.cells.push_back(next);
             
             // When cell has triangles add them to list
             auto iter = voxelsToTri.find(idx);
             if (iter != voxelsToTri.end()) {
-                triIndices.insert(triIndices.end(), iter->second.begin(), iter->second.end());
+                v.triangleIndices.insert(v.triangleIndices.end(), iter->second.begin(), iter->second.end());
                 next += static_cast<int>(iter->second.size());
             }
             
             // Terminal
-            triIndices.push_back(-1);
+            v.triangleIndices.push_back(-1);
             ++next;
         }
         

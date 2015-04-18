@@ -22,11 +22,16 @@ TEST_CASE("osg_shaders")
     
     osgDB::Options *opts = new osgDB::Options();
     opts->setOptionString("noTesselateLargePolygons noTriStripPolygons noRotation");
-    osg::Node *root = osgDB::readNodeFile(std::string("input.obj"), opts);
+    
+    osg::Node *nSrc = osgDB::readNodeFile(std::string("source.ply"), opts);
+    osg::Node *nTarget = osgDB::readNodeFile(std::string("target.obj"), opts);
      
-    bake::Surface s;
-    bake::convertSurface(root, s, bake::ConvertVertexNormals | bake::ConvertVertexUVs);
-    bake::opencl::bakeTextureMap(s, s);
+    bake::Surface src, target;
+    
+    bake::convertSurface(nSrc, src, bake::ConvertVertexNormals | bake::ConvertVertexColors);
+    bake::convertSurface(nTarget, target, bake::ConvertVertexNormals | bake::ConvertVertexUVs);
+    
+    bake::opencl::bakeTextureMap(src, target);
     /*
     osgViewer::Viewer viewer;
     viewer.setSceneData(root);

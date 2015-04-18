@@ -128,7 +128,6 @@ namespace bake {
         n->accept(v1);
         
         // Check constraints
-        
         if (v1.nTriangles == 0) {
             BAKE_LOG("Zero triangles found.");
             return false;
@@ -159,8 +158,6 @@ namespace bake {
         
         SecondPassVisitor v2(s, opts);
         n->accept(v2);
-        
-        s.bounds = computeBoundingBox(s.vertexPositions);
         
         return true;
         

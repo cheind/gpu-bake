@@ -58,7 +58,7 @@ float3 intersectRayTriangle(Ray r, float3 a, float3 b, float3 c) {
         return (float3)(-1.f);
     
     float3 q = r.o + r.d * t;
-    float invAreaABC = dot(un, n);
+    float invAreaABC = 1.f / dot(un, n);
     float alpha = dot(cross(c - b, q - b), n) * invAreaABC;
     float beta = dot(cross(a - c, q - c), n) * invAreaABC;
     

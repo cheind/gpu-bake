@@ -30,23 +30,28 @@ namespace bake {
         VertexColorMatrix vertexColors;
         VertexNormalMatrix vertexNormals;
         VertexUVMatrix vertexUVs;
+    };
+    
+    /**
+        Uniform grid volume over a triangle mesh.
+     
+        Stores a single index per voxel that represents the first trianlge index in that voxel.
+        All triangle indices are considered to be part of the cell until a terminator index is found (-1).
+    */
+    struct SurfaceVolume {
         Eigen::AlignedBox3f bounds;
+        Eigen::Affine3f toVoxel;
+        Eigen::Vector3i voxelsPerDimension;
+        Eigen::Vector3f voxelSizes;
+        std::vector<int> cells;
+        std::vector<int> triangleIndices;
     };
     
     /** Compute an axis aligned bounding box for the given points. */
     Eigen::AlignedBox3f computeBoundingBox(const Surface::VertexPositionMatrix &m);
     
-    /** Build a transformation that maps from world coordinates to voxel grid coordinates. */
-    Eigen::Affine3f buildWorldToVoxel(const Eigen::Vector3f &origin, const Eigen::Vector3f &voxelSizes);
-
-    /** Transform world point to voxel it falls into. */
-    Eigen::Vector3i toVoxel(const Eigen::Affine3f &wl, const Eigen::Vector3f &x);
-    
-    /** Map voxel index to flat array index. */
-    int toIndex(const Eigen::Vector3i &idx, int res);
-    
     /** Builds a uniform grid where each voxel maps to all triangle indices intersecting that voxel. */
-    bool buildSurfaceVolume(const Surface &s, int nVoxelsPerDimension, std::vector<int> &cells, std::vector<int> &triIndices);
+    bool buildSurfaceVolume(const Surface &s, const Eigen::Vector3i &voxelsPerDimension, SurfaceVolume &v);
     
 }
 
