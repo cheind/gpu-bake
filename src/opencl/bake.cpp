@@ -220,11 +220,12 @@ namespace bake {
             };
             
             cl_float4 voxelSizes = {{sv.voxelSizes.x(), sv.voxelSizes.y(), sv.voxelSizes.z(), 0}};
+            cl_float4 invVoxelSizes = {{1.f / sv.voxelSizes.x(), 1.f / sv.voxelSizes.y(), 1.f / sv.voxelSizes.z(), 0}};
             cl_int4 voxelsPerDim = {{sv.voxelsPerDimension.x(), sv.voxelsPerDimension.y(), sv.voxelsPerDimension.z(), 0}};
             
             // Texture
             
-            const int imagesize = 1024;
+            const int imagesize = 512;
             
             Image<unsigned char> texture(imagesize, imagesize, 3);
             texture.toOpenCV().setTo(0);
@@ -246,11 +247,12 @@ namespace bake {
             ocl.kBakeTexture.setArg(7, bSrcTrianglesInVoxels);
             ocl.kBakeTexture.setArg(8, carray(minmax, 8));
             ocl.kBakeTexture.setArg(9, sizeof(cl_float4), voxelSizes.s);
-            ocl.kBakeTexture.setArg(10, sizeof(cl_int4), voxelsPerDim.s);
-            ocl.kBakeTexture.setArg(11, bTexture);
-            ocl.kBakeTexture.setArg(12, imagesize);
-            ocl.kBakeTexture.setArg(13, 0.5f);
-            ocl.kBakeTexture.setArg(14, (int)target.vertexPositions.cols()/3);
+            ocl.kBakeTexture.setArg(10, sizeof(cl_float4), invVoxelSizes.s);
+            ocl.kBakeTexture.setArg(11, sizeof(cl_int4), voxelsPerDim.s);
+            ocl.kBakeTexture.setArg(12, bTexture);
+            ocl.kBakeTexture.setArg(13, imagesize);
+            ocl.kBakeTexture.setArg(14, 0.5f);
+            ocl.kBakeTexture.setArg(15, (int)target.vertexPositions.cols()/3);
             
             int nTrianglesDivisableBy2 = target.vertexPositions.cols()/3 + (target.vertexPositions.cols()/3) % 2;
             
