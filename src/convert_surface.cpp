@@ -75,7 +75,7 @@ namespace bake {
             for (unsigned int idraw = 0 ; idraw < nDraws; ++idraw) {
                 osg::Geometry *geom = n.getDrawable( idraw )->asGeometry();
                 osg::Vec3Array *v = static_cast<osg::Vec3Array*>(geom->getVertexArray());
-                osg::Vec3Array *vc = static_cast<osg::Vec3Array*>(geom->getColorArray());
+                osg::Vec4Array *vc = static_cast<osg::Vec4Array*>(geom->getColorArray());
                 osg::Vec3Array *vn = static_cast<osg::Vec3Array*>(geom->getNormalArray());
                 osg::Vec2Array *vt = static_cast<osg::Vec2Array*>(geom->getTexCoordArray(0));
                 
@@ -89,7 +89,7 @@ namespace bake {
                             if (_opts & ConvertVertexColors)
                                 _s.vertexColors.col(_idx) = toE(vc->at(p->index(i)));
                             if (_opts & ConvertVertexNormals)
-                                _s.vertexNormals.col(_idx) = toE(vn->at(p->index(i)));
+                                _s.vertexNormals.col(_idx) = toE(vn->at(p->index(i))).normalized();
                             if (_opts & ConvertVertexUVs) {
                                 _s.vertexUVs.col(_idx) = toE(vt->at(p->index(i)));
                             }
@@ -105,6 +105,10 @@ namespace bake {
         
         Eigen::Vector4f toE(const osg::Vec3 &v) const {
             return Eigen::Vector4f(v.x(), v.y(), v.z(), 1.f);
+        }
+        
+        Eigen::Vector4f toE(const osg::Vec4 &v) const {
+            return Eigen::Vector4f(v.x(), v.y(), v.z(), v.w());
         }
         
         Eigen::Vector2f toE(const osg::Vec2 &v) const {
