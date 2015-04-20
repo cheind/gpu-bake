@@ -24,8 +24,9 @@ __kernel void bakeTextureMap(
     __global int* srcVoxels,
     __global int* srcTrianglesInVoxels,
     float8 srcVoxelBounds,
-    float4 srcVoxelSizes,
-    int4 srcVoxelPerDimension,
+    float3 srcVoxelSizes,
+    float3 srcInvVoxelSizes,
+    int3 srcVoxelPerDimension,
     __write_only image2d_t texture,
     int imageSize,
     float stepOut,
@@ -49,9 +50,9 @@ __kernel void bakeTextureMap(
     float3 nB = targetVertexNormals[triId*3+1];
     float3 nC = targetVertexNormals[triId*3+2];
     
-    float4 bounds[2];
-    bounds[0] = srcVoxelBounds.lo;
-    bounds[1] = srcVoxelBounds.hi;
+    float3 bounds[2];
+    bounds[0] = srcVoxelBounds.lo.xyz;
+    bounds[1] = srcVoxelBounds.hi.xyz;
     
     
     // Rasterize triangle in UV space.
@@ -74,22 +75,28 @@ __kernel void bakeTextureMap(
             float w = 1.f - u - v;
             
             if ((u >= 0) & (v >= 0) & (w >= 0)) {
-                // Inside triangle, create ray and march source volume.
+                // Inside triangle, create ray and march the source volume.
                 float3 rn = normalize(nA * u + nB * v + nC * w);
                 float3 ro = xA * u + xB * v + xC * w;
                 ro += rn * stepOut;
                 Ray r = createRay(ro, rn * -1.f);
                 
-                int2 pix = (int2)(round(x), round(y));
+                int triIdx = 0;
+                float3 triHit = (float3)(-1.f);
                 
-                float4 color = (float4)(
-                    (triId % 255) / 255.f,
-                    (triId % 255) / 255.f,
-                    (triId % 255) / 255.f,
-                    1.f
-                );
+                ddaTriangleVolume(r, bounds, srcVoxelSizes, srcInvVoxelSizes, srcVoxelPerDimension, srcVertexPositions, srcVoxels, srcTrianglesInVoxels, &triIdx, &triHit);
                 
-                write_imagef(texture, pix, color);
+                if (triIdx > -1) {
+                
+                    int2 pix = (int2)(round(x), round(y));
+                    
+                    float4 cA = srcVertexColors[triIdx*3+0];
+                    float4 cB = srcVertexColors[triIdx*3+1];
+                    float4 cC = srcVertexColors[triIdx*3+2];
+                    float4 c = triHit.y * cA + triHit.z * cB + (1.f - (triHit.y + triHit.z)) * cC;
+                
+                    write_imagef(texture, pix, c);
+                }
             }
             
         }
