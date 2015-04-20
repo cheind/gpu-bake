@@ -9,6 +9,7 @@
 #include <bake/geometry.h>
 #include <unordered_map>
 #include <set>
+#include <iostream>
 
 namespace bake {
     
@@ -48,6 +49,14 @@ namespace bake {
     bool buildSurfaceVolume(const Surface &s, const Eigen::Vector3i &voxelsPerDimension, SurfaceVolume &v)
     {
         v.bounds = computeBoundingBox(s.vertexPositions);
+        
+        // When the bounds are of zero-length in any dimension, we
+        // artificially enlarge the bounds to avoid numerical issues.
+        if (v.bounds.volume() == 0.f) {
+            v.bounds.min() -= Eigen::Vector3f::Constant(0.1f);
+            v.bounds.max() += Eigen::Vector3f::Constant(0.1f);
+        }
+        
         v.voxelsPerDimension = voxelsPerDimension;
         v.voxelSizes = v.bounds.diagonal().array() / voxelsPerDimension.cast<float>().array();
         v.toVoxel = buildWorldToVoxel(v.bounds.min(), v.voxelSizes);
@@ -59,34 +68,36 @@ namespace bake {
         
         const int ntri = static_cast<int>(s.vertexPositions.cols() / 3);
         for (int tri = 0; tri < ntri; ++tri) {
-            int a = toIndex(toVoxel(v.toVoxel, points.col(tri * 3 + 0)), v.voxelsPerDimension);
-            int b = toIndex(toVoxel(v.toVoxel, points.col(tri * 3 + 1)), v.voxelsPerDimension);
-            int c = toIndex(toVoxel(v.toVoxel, points.col(tri * 3 + 2)), v.voxelsPerDimension);
             
-            voxelsToTri[a].insert(tri);
-            voxelsToTri[b].insert(tri);
-            voxelsToTri[c].insert(tri);
+            Eigen::AlignedBox3i primBox;
+            primBox.extend(toVoxel(v.toVoxel, points.col(tri * 3 + 0)));
+            primBox.extend(toVoxel(v.toVoxel, points.col(tri * 3 + 1)));
+            primBox.extend(toVoxel(v.toVoxel, points.col(tri * 3 + 2)));
+            
+            for (int z = primBox.min().z(); z <= primBox.max().z(); ++z)
+                for (int y = primBox.min().y(); y <= primBox.max().y(); ++y)
+                    for (int x = primBox.min().x(); x <= primBox.max().x(); ++x)
+                        voxelsToTri[toIndex(Eigen::Vector3i(x, y, z), v.voxelsPerDimension)].insert(tri);
         }
         
         // Loop over all cells and update output structures.
         v.cells.clear();
         v.triangleIndices.clear();
         
-        int next = 0;
-        for (int idx = 0; idx < v.voxelsPerDimension.array().size(); ++idx) {
+        const int nVoxels = v.voxelsPerDimension.x() * v.voxelsPerDimension.y() * v.voxelsPerDimension.z();
+
+        for (int idx = 0; idx < nVoxels; ++idx) {
             // Start index in triIndices
-            v.cells.push_back(next);
+            v.cells.push_back(static_cast<int>(v.triangleIndices.size()));
             
             // When cell has triangles add them to list
             auto iter = voxelsToTri.find(idx);
             if (iter != voxelsToTri.end()) {
                 v.triangleIndices.insert(v.triangleIndices.end(), iter->second.begin(), iter->second.end());
-                next += static_cast<int>(iter->second.size());
             }
             
             // Terminal
             v.triangleIndices.push_back(-1);
-            ++next;
         }
         
         return true;
